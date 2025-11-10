@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { load } from "@cashfreepayments/cashfree-js";
 
 export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
@@ -11,17 +12,19 @@ export default function PaymentPage() {
     amount: "1.00",
   });
 
-  // update form state dynamically
+  // Handle form input
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  // ✅ Updated Cashfree PG v2 payment handler
   async function handlePay(e) {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Step 1: Create an order through your backend API
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,37 +41,40 @@ export default function PaymentPage() {
       setLoading(false);
 
       if (!json.success) {
-        alert("Create order failed: " + JSON.stringify(json.error, null, 2));
+        alert("❌ Failed to create order: " + JSON.stringify(json.error, null, 2));
         return;
       }
 
-      const payload = json.data;
+      // Step 2: Extract session ID
+      const sessionId = json.data.payment_session_id;
 
-      // Redirect to hosted payment page
-      if (payload.payment_link) {
-        window.location.href = payload.payment_link;
+      if (!sessionId) {
+        alert("❌ No payment_session_id returned from backend!");
         return;
       }
 
-      // Or open popup if SDK is loaded
-      if (payload.order_token) {
-        if (window?.Cashfree?.openCheckout) {
-          window.Cashfree.openCheckout({ order_token: payload.order_token });
-        } else if (window?.cashfree) {
-          window.cashfree.openCheckout({ order_token: payload.order_token });
-        } else {
-          alert(
-            "Order token created but Cashfree SDK not loaded. Redirecting to payment link if exists."
-          );
-          if (payload.payment_link) window.location.href = payload.payment_link;
-        }
-        return;
-      }
+      // Step 3: Load the Cashfree SDK
+      const cashfree = await load({
+        mode: "production", // 🔄 change to "sandbox" for testing
+      });
 
-      alert("Order created — server response: " + JSON.stringify(payload));
+      // Step 4: Open payment popup
+      cashfree.pay({
+        paymentSessionId: sessionId,
+        redirectTarget: "_self", // or "_blank" if you prefer a new tab
+      });
+
+      // Optional: Listen to events
+      cashfree.on("payment.success", (data) => {
+        console.log("✅ Payment successful:", data);
+      });
+
+      cashfree.on("payment.failed", (data) => {
+        console.log("❌ Payment failed:", data);
+      });
     } catch (err) {
       setLoading(false);
-      console.error(err);
+      console.error("Payment error:", err);
       alert("Error creating order: " + err.message);
     }
   }
@@ -88,9 +94,16 @@ export default function PaymentPage() {
       }}
     >
       <h2 style={{ marginBottom: 16 }}>💳 Real Payment (Cashfree)</h2>
-      <p style={{ marginBottom: 24, color: "#aaa", maxWidth: 400, textAlign: "center" }}>
-        Enter your details below. This will use your <b>live Cashfree keys</b> to
-        create a real ₹{form.amount} payment order.
+      <p
+        style={{
+          marginBottom: 24,
+          color: "#aaa",
+          maxWidth: 400,
+          textAlign: "center",
+        }}
+      >
+        Enter your details below. This will use your{" "}
+        <b>live Cashfree keys</b> to create a real ₹{form.amount} payment order.
       </p>
 
       <form
