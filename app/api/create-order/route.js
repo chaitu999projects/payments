@@ -1,4 +1,3 @@
-import axios from "axios";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -12,6 +11,9 @@ export async function POST(req) {
       process.env.CASHFREE_ENV === "prod"
         ? "https://api.cashfree.com"
         : "https://sandbox.cashfree.com";
+
+    console.log("🚀 Environment:", ENV);
+    console.log("📦 Request Payload:", body);
 
     const payload = {
       order_id: orderId,
@@ -28,28 +30,44 @@ export async function POST(req) {
       },
     };
 
-    const resp = await fetch(`${ENV}/pg/orders`, {
+    const response = await fetch(`${ENV}/pg/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-version": "2022-09-01",
         "x-client-id": APP_ID,
         "x-client-secret": SECRET,
+        "x-api-version": "2022-09-01",
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await resp.json();
+    console.log("📡 Response Status:", response.status);
 
-    if (!resp.ok) {
-      console.error("Cashfree API error:", data);
-      return NextResponse.json({ success: false, error: data }, { status: resp.status });
+    // Some Cashfree 401/500 errors send empty bodies -> must check before parsing
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      console.warn("⚠️ Response body could not be parsed:", parseErr.message);
+      data = { message: "Empty or invalid JSON from Cashfree" };
     }
 
-    return NextResponse.json({ success: true, data });
+    console.log("🧾 Response Body:", JSON.stringify(data, null, 2));
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { success: false, error: data },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json({ success: true, data }, { status: 200 });
+
   } catch (err) {
-    console.error("create-order error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error("❌ create-order runtime error:", err);
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
-
