@@ -12,7 +12,6 @@ export default function PaymentPage() {
     amount: "1.00",
   });
 
-  // Handle form input
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
