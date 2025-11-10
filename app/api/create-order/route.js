@@ -1,4 +1,5 @@
 import axios from "axios";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
@@ -42,13 +43,13 @@ export async function POST(req) {
 
     if (!resp.ok) {
       console.error("Cashfree API error:", data);
-      return Response.json({ success: false, error: data }, { status: resp.status });
+      return NextResponse.json({ success: false, error: data }, { status: resp.status });
     }
 
-    return Response.json({ success: true, data });
+    return NextResponse.json({ success: true, data });
   } catch (err) {
     console.error("create-order error:", err);
-    return Response.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
 

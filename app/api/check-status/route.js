@@ -1,11 +1,12 @@
 import axios from "axios";
+import { NextResponse } from "next/server";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const orderId = searchParams.get("order_id");
 
   if (!orderId) {
-    return new Response(
+    return new NextResponse(
       JSON.stringify({ error: "Missing order_id" }),
       { status: 400 }
     );
@@ -25,14 +26,14 @@ export async function GET(req) {
 
     const res = await axios.get(`${BASE}/pg/orders/${orderId}`, { headers });
 
-    return new Response(JSON.stringify(res.data), {
+    return new NextResponse(JSON.stringify(res.data), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("check-status error:", err.response?.data || err.message);
-    return new Response(
-      JSON.stringify({ error: err.response?.data || err.message }),
+    console.error("check-status error:", err.NextResponse?.data || err.message);
+    return new NextResponse(
+      JSON.stringify({ error: err.NextResponse?.data || err.message }),
       { status: 500 }
     );
   }

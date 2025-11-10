@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req) {
       console.log("⚠️ No signature header (Cashfree test webhook)");
       const testEvent = JSON.parse(rawBody);
       console.log("✅ Test webhook received:", testEvent);
-      return new Response("OK (Test webhook received)", { status: 200 });
+      return new NextResponse("OK (Test webhook received)", { status: 200 });
     }
 
     // Verify signature for real webhook
@@ -24,7 +25,7 @@ export async function POST(req) {
 
     if (computed !== signatureHeader) {
       console.warn("❌ Invalid Cashfree signature");
-      return new Response("Invalid signature", { status: 401 });
+      return new NextResponse("Invalid signature", { status: 401 });
     }
 
     // Process verified real event
@@ -38,9 +39,9 @@ export async function POST(req) {
 
     // TODO: update your database here
 
-    return new Response("OK", { status: 200 });
+    return new NextResponse("OK", { status: 200 });
   } catch (err) {
     console.error("❌ Webhook error:", err);
-    return new Response("Error", { status: 500 });
+    return new NextResponse("Error", { status: 500 });
   }
 }
