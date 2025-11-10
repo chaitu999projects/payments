@@ -12,14 +12,14 @@ export default function PaymentPage() {
     amount: "1.00",
   });
 
-  // ✅ Load Cashfree SDK (Production only)
+  // ✅ Load Cashfree SDK (Production v3)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const loadSdk = async () => {
-      if (!window.cashfree) {
+      if (!window.Cashfree) {
         const script = document.createElement("script");
-        script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+        script.src = "https://sdk.cashfree.com/js/v3/cashfree.js"; // ✅ Correct SDK path
         script.async = true;
         script.onload = () => {
           console.log("✅ Cashfree SDK loaded successfully");
@@ -32,7 +32,6 @@ export default function PaymentPage() {
         document.body.appendChild(script);
       } else {
         console.log("⚡ Cashfree SDK already available");
-        // ✅ Delay to avoid direct setState inside effect body
         await Promise.resolve();
         setSdkLoaded(true);
       }
@@ -47,7 +46,7 @@ export default function PaymentPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  // ✅ Payment handler
+  // ✅ Handle Payment
   async function handlePay(e) {
     e.preventDefault();
 
@@ -83,20 +82,20 @@ export default function PaymentPage() {
       const payload = json.data;
       console.log("✅ Order created successfully:", payload);
 
-      // ✅ Use Cashfree v3 SDK checkout
-      if (window.cashfree && payload.payment_session_id) {
+      // ✅ Use Cashfree v3 SDK
+      if (window.Cashfree && payload.payment_session_id) {
         console.log("🚀 Opening Cashfree checkout...");
-        const cashfree = new window.cashfree.Cashfree({
-          mode: "production", // "sandbox" for testing
+        const cashfree = new window.Cashfree({
+          mode: "production", // ✅ Use "sandbox" only if testing
         });
 
         cashfree.checkout({
           paymentSessionId: payload.payment_session_id,
-          redirectTarget: "_self",
+          redirectTarget: "_self", // Opens in same tab
         });
       } else {
         console.error("❌ SDK not loaded or invalid order response:", {
-          sdk: window.cashfree,
+          sdk: window.Cashfree,
           payload,
         });
         alert("Cashfree SDK not loaded or invalid order response.");
@@ -108,7 +107,7 @@ export default function PaymentPage() {
     }
   }
 
-  // ✅ UI Layout
+  // ✅ UI
   return (
     <div
       style={{
@@ -123,7 +122,7 @@ export default function PaymentPage() {
         color: "white",
       }}
     >
-      <h2 style={{ marginBottom: 16 }}>💳 Cashfree Payments (Live)</h2>
+      <h2 style={{ marginBottom: 16 }}>💳 Cashfree Payment (Production)</h2>
       <p
         style={{
           marginBottom: 24,
@@ -132,7 +131,7 @@ export default function PaymentPage() {
           textAlign: "center",
         }}
       >
-        Use your <b>Live Cashfree credentials</b> to process a real payment of ₹
+        This page uses your <b>Live Cashfree keys</b> to create a real payment of ₹
         {form.amount}.
       </p>
 
@@ -203,7 +202,7 @@ export default function PaymentPage() {
   );
 }
 
-// ✅ Styles
+// ✅ Common input styles
 const inputStyle = {
   padding: "10px 12px",
   borderRadius: "6px",
